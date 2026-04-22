@@ -123,7 +123,27 @@ function buyTicket() {
     );
 }
 
-    
+function handlePending(data) {
+
+    console.log("Pending Result:", data);
+
+    // ✅ SUCCESS (user approved transaction)
+    if (data.response && data.response.status) {
+
+        entries.push({
+            address: userAddress,
+            time: new Date().toISOString()
+        });
+
+        localStorage.setItem("entries", JSON.stringify(entries));
+        renderEntries();
+
+        alert("🎟 Ticket confirmed!");
+
+    } else {
+        alert("❌ Transaction rejected or failed");
+    }
+}    
     
 
 // ===============================
