@@ -7,7 +7,6 @@ MINIMASK.init(function (event) {
 
     console.log("MiniMask Event:", event);
 
-    // 🟢 Wallet ready
     if (event.event === "MINIMASK_INIT") {
         if (event.data.loggedon) {
             userAddress = event.data.address;
@@ -17,7 +16,6 @@ MINIMASK.init(function (event) {
         }
     }
 
-    // 🟢 Transaction result
     if (event.event === "MINIMASK_PENDING") {
         handlePending(event.data);
     }
@@ -27,7 +25,7 @@ MINIMASK.init(function (event) {
 // ⚙ CONFIG
 // ===============================
 const LOTTERY_ADDRESS = "MxG086HDR94WWW3ZJE24E807D5SQ7F5WUDQFNN9N221P89D698ZET9YK8832YJQ";
-const TICKET_PRICE = "1";
+const TICKET_PRICE = 1; // ✅ FIXED
 
 // ===============================
 // 📦 STATE
@@ -62,9 +60,7 @@ function buyTicket() {
 
     console.log("Checking wallet...");
 
-    // 🔥 fallback check
     if (!userAddress) {
-        console.log("Trying to fetch wallet...");
 
         MINIMASK.account.get(function(res) {
 
@@ -82,6 +78,10 @@ function buyTicket() {
         sendTransaction();
     }
 }
+
+// ===============================
+// 🚀 SEND TRANSACTION (🔥 MISSING FIX)
+// ===============================
 function sendTransaction() {
 
     console.log("🚀 Sending transaction...");
@@ -105,7 +105,7 @@ function sendTransaction() {
             }
         }
     );
-}        
+}
 
 // ===============================
 // ✅ HANDLE CONFIRMATION
