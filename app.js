@@ -60,42 +60,29 @@ function buyTicket() {
         return;
     }
 
+    console.log("Checking wallet...");
+
+    // 🔥 fallback check
     if (!userAddress) {
-        alert("Please login to MiniMask!");
-        return;
-    }
+        console.log("Trying to fetch wallet...");
 
-    console.log("⏳ Preparing transaction...");
+        MINIMASK.account.get(function(res) {
 
-    // Small delay for mobile stability
-    setTimeout(() => {
+            console.log("Account fetch:", res);
 
-        console.log("🚀 Sending transaction...");
-
-        MINIMASK.account.send(
-            TICKET_PRICE,
-            LOTTERY_ADDRESS,
-            "0x00",
-            {},
-            function (resp) {
-
-                console.log("MiniMask Response:", resp);
-
-                // ❌ real error
-                if (!resp.pending && !resp.status) {
-                    alert("❌ Error: " + resp.error);
-                    return;
-                }
-
-                // ⏳ pending (correct state)
-                if (resp.pending) {
-                    alert("⏳ Transaction created! Open MiniMask → approve it.");
-                }
+            if (res && res.address) {
+                userAddress = res.address;
+                sendTransaction();
+            } else {
+                alert("Please login to MiniMask!");
             }
-        );
+        });
 
-    }, 1200);
+    } else {
+        sendTransaction();
+    }
 }
+        
 
 // ===============================
 // ✅ HANDLE CONFIRMATION
