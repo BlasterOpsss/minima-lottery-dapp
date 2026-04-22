@@ -95,32 +95,34 @@ function buyTicket() {
         return;
     }
 
-    console.log("🚀 Sending transaction...");
+    console.log("⏳ Waiting for MiniMask...");
 
-    MINIMASK.account.send(
-        1,                    // amount
-        "MxLOTTERY123",       // your lottery address
-        "0x00",               // MINIMA token
-        {},                   // state
-        function(resp) {
+    // 🔥 IMPORTANT DELAY
+    setTimeout(() => {
 
-            console.log("MiniMask Response:", resp);
+        console.log("🚀 Sending transaction...");
 
-            // ✅ Correct handling
-            if (resp.pending) {
-                alert("⏳ Transaction pending! Open MiniMask and approve it.");
-                return;
+        MINIMASK.account.send(
+            "1",
+            "MxYOUR_REAL_ADDRESS_HERE",   // ⚠️ MUST be real
+            "0x00",
+            {},
+            function(resp) {
+
+                console.log("MiniMask Response:", resp);
+
+                if (!resp.pending && !resp.status) {
+                    alert("❌ Error: " + resp.error);
+                    return;
+                }
+
+                if (resp.pending) {
+                    alert("⏳ Transaction created! Check MiniMask.");
+                }
             }
+        );
 
-            // ❌ Actual failure
-            if (!resp.status) {
-                alert("❌ Error: " + resp.error);
-                return;
-            }
-
-            // ⚠️ No entry here — next step handles it
-        }
-    );
+    }, 1500); // 1.5 sec delay
 }
 
 function handlePending(data) {
