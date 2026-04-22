@@ -1,8 +1,8 @@
 // ===============================
-// 🔌 MiniMask Wrapper
+// 🔌 MiniMask Wrapper (REAL BRIDGE)
 // ===============================
 function sendToMiniMask(action, data = {}) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
 
         const randid = Math.random().toString(36).substring(7);
 
@@ -19,6 +19,12 @@ function sendToMiniMask(action, data = {}) {
             }
         }
 
+        // safety timeout (important)
+        setTimeout(() => {
+            window.removeEventListener("message", handler);
+            reject("MiniMask timeout");
+        }, 5000);
+
         window.addEventListener("message", handler);
 
         window.postMessage({
@@ -31,13 +37,13 @@ function sendToMiniMask(action, data = {}) {
 }
 
 // ===============================
-// 🎯 CONFIG
+// ⚙ CONFIG
 // ===============================
-const LOTTERY_ADDRESS = "MxLOTTERY123"; // 🔁 replace later
+const LOTTERY_ADDRESS = "MxLOTTERY123"; // 🔁 replace with real address
 const TICKET_PRICE = 1;
 
 // ===============================
-// 📦 STATE (temporary storage)
+// 📦 STATE
 // ===============================
 let entries = JSON.parse(localStorage.getItem("entries")) || [];
 
@@ -58,19 +64,27 @@ function renderEntries() {
 }
 
 // ===============================
-// 🎟 Buy Ticket
+// 🎟 BUY TICKET (FIXED)
 // ===============================
 async function buyTicket() {
 
     try {
+        console.log("🚀 Sending request to MiniMask...");
+
         const response = await sendToMiniMask("send", {
             address: LOTTERY_ADDRESS,
             amount: TICKET_PRICE
         });
 
-        console.log("MiniMask Response:", response);
+        console.log("✅ MiniMask response:", response);
 
-        // ⚠️ TEMP FAKE USER (replace later with real address)
+        // 🚨 CRITICAL CHECK
+        if (!response || response === null) {
+            alert("MiniMask did not confirm transaction");
+            return;
+        }
+
+        // TEMP user (next step we replace this with real address)
         const user = "User_" + Math.floor(Math.random() * 9999);
 
         entries.push({
@@ -79,28 +93,26 @@ async function buyTicket() {
         });
 
         localStorage.setItem("entries", JSON.stringify(entries));
-
         renderEntries();
 
-        alert("🎟 Ticket purchased!");
+        alert("🎟 Ticket purchased successfully!");
 
     } catch (err) {
-        console.error(err);
-        alert("Transaction failed");
+        console.error("❌ Error:", err);
+        alert("MiniMask not responding or transaction failed");
     }
 }
 
 // ===============================
-// 🎲 Draw Winner
+// 🎲 DRAW WINNER
 // ===============================
 function drawWinner() {
 
     if (entries.length === 0) {
-        alert("No entries!");
+        alert("No entries yet!");
         return;
     }
 
-    // Better randomness than Math.random
     const rand = crypto.getRandomValues(new Uint32Array(1))[0];
     const index = rand % entries.length;
 
@@ -111,7 +123,7 @@ function drawWinner() {
 }
 
 // ===============================
-// 🧹 Reset Lottery (optional)
+// 🧹 RESET LOTTERY
 // ===============================
 function resetLottery() {
     entries = [];
