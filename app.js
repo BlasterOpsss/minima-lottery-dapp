@@ -103,8 +103,8 @@ function buyTicket() {
         console.log("🚀 Sending transaction...");
 
         MINIMASK.account.send(
-            "1",
-            "MxG086HDR94WWW3ZJE24E807D5SQ7F5WUDQFNN9N221P89D698ZET9YK8832YJQ",   // ⚠️ MUST be real
+    "1",
+    LOTTERY_ADDRESS,   // ⚠️ MUST be real
             "0x00",
             {},
             function(resp) {
