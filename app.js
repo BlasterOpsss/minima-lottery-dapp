@@ -1,3 +1,6 @@
+// ===============================
+// 🔌 MiniMask Wrapper
+// ===============================
 function sendToMiniMask(action, data = {}) {
     return new Promise((resolve) => {
 
@@ -26,45 +29,98 @@ function sendToMiniMask(action, data = {}) {
         });
     });
 }
-const LOTTERY_ADDRESS = "MxLOTTERY123"; // replace later
+
+// ===============================
+// 🎯 CONFIG
+// ===============================
+const LOTTERY_ADDRESS = "MxLOTTERY123"; // 🔁 replace later
+const TICKET_PRICE = 1;
+
+// ===============================
+// 📦 STATE (temporary storage)
+// ===============================
 let entries = JSON.parse(localStorage.getItem("entries")) || [];
 
+// ===============================
+// 🖥 Render Entries
+// ===============================
 function renderEntries() {
     const list = document.getElementById("entries");
+    if (!list) return;
+
     list.innerHTML = "";
-    entries.forEach(e => {
+
+    entries.forEach((entry, index) => {
         const li = document.createElement("li");
-        li.innerText = e.address + " (" + e.amount + ")";
+        li.innerText = `${index + 1}. ${entry.address}`;
         list.appendChild(li);
     });
 }
 
+// ===============================
+// 🎟 Buy Ticket
+// ===============================
 async function buyTicket() {
-    if (!window.minima) {
-        alert("MiniMask not installed");
+
+    try {
+        const response = await sendToMiniMask("send", {
+            address: LOTTERY_ADDRESS,
+            amount: TICKET_PRICE
+        });
+
+        console.log("MiniMask Response:", response);
+
+        // ⚠️ TEMP FAKE USER (replace later with real address)
+        const user = "User_" + Math.floor(Math.random() * 9999);
+
+        entries.push({
+            address: user,
+            time: new Date().toISOString()
+        });
+
+        localStorage.setItem("entries", JSON.stringify(entries));
+
+        renderEntries();
+
+        alert("🎟 Ticket purchased!");
+
+    } catch (err) {
+        console.error(err);
+        alert("Transaction failed");
+    }
+}
+
+// ===============================
+// 🎲 Draw Winner
+// ===============================
+function drawWinner() {
+
+    if (entries.length === 0) {
+        alert("No entries!");
         return;
     }
 
-    await window.minima.send({
-        address: LOTTERY_ADDRESS,
-        amount: 1
-    });
+    // Better randomness than Math.random
+    const rand = crypto.getRandomValues(new Uint32Array(1))[0];
+    const index = rand % entries.length;
 
-    const user = "User_" + Math.floor(Math.random()*1000);
-    entries.push({ address: user, amount: 1 });
-
-    localStorage.setItem("entries", JSON.stringify(entries));
-    renderEntries();
-}
-
-function drawWinner() {
-    if (entries.length === 0) return;
-
-    const index = Date.now() % entries.length;
     const winner = entries[index];
 
     document.getElementById("winner").innerText =
-        "Winner: " + winner.address;
+        `🏆 Winner: ${winner.address}`;
 }
 
+// ===============================
+// 🧹 Reset Lottery (optional)
+// ===============================
+function resetLottery() {
+    entries = [];
+    localStorage.removeItem("entries");
+    renderEntries();
+    document.getElementById("winner").innerText = "";
+}
+
+// ===============================
+// 🚀 INIT
+// ===============================
 renderEntries();
