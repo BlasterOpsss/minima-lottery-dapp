@@ -1,182 +1,156 @@
 // ===============================
-// 🔌 INIT MINIMASK (SAFE LOAD)
+// 📦 STATE & CONFIG
 // ===============================
 let userAddress = "";
-
-window.addEventListener("load", () => {
-
-    setTimeout(() => {
-
-        if (typeof MINIMASK === "undefined") {
-            console.error("❌ MiniMask not injected");
-            return;
-        }
-
-        console.log("✅ MiniMask detected");
-
-        // 🔥 INIT
-        MINIMASK.init(function(event) {
-
-            console.log("MiniMask Event:", event);
-
-            if (event.event === "MINIMASK_INIT") {
-
-                // 🔴 IMPORTANT: manually request account
-                MINIMASK.account.send(
-                    "0",
-                    "", 
-                    "0x00",
-                    {},
-                    function(res) {
-
-                        console.log("Account check:", res);
-
-                        if (res && res.status !== false) {
-                            userAddress = res.address;
-                            console.log("✅ Logged in as:", userAddress);
-                        } else {
-                            console.log("❌ Not logged in");
-                        }
-                    }
-                );
-            }
-
-            if (event.event === "MINIMASK_PENDING") {
-                handlePending(event.data);
-            }
-        });
-
-    }, 1000);
-
-});
-
-
-// ===============================
-// ⚙ CONFIG
-// ===============================
 const LOTTERY_ADDRESS = "MxG086HDR94WWW3ZJE24E807D5SQ7F5WUDQFNN9N221P89D698ZET9YK8832YJQ";
-const TICKET_PRICE = 1;
+const TICKET_PRICE = "1"; // Keep as string for BigInt safety in blockchain libs
 
-
-// ===============================
-// 📦 STATE
-// ===============================
+// Load entries from LocalStorage
 let entries = JSON.parse(localStorage.getItem("entries")) || [];
 
+// ===============================
+// 🛡️ MINIMASK INITIALIZATION
+// ===============================
+if (typeof MINIMASK !== "undefined") {
+    MINIMASK.init(function(event) {
+        console.log("MiniMask Event:", event);
+
+        switch (event.event) {
+            case "MINIMASK_INIT":
+                if (event.data.loggedon) {
+                    userAddress = event.data.address;
+                    console.log("Wallet Connected:", userAddress);
+                } else {
+                    console.warn("User not logged into MiniMask");
+                }
+                break;
+
+            case "MINIMASK_PENDING":
+                handlePending(event.data);
+                break;
+        }
+    });
+} else {
+    console.error("MiniMask is not installed or detected.");
+}
 
 // ===============================
-// 🖥 Render Entries
+// 🖥️ UI RENDERING
 // ===============================
 function renderEntries() {
     const list = document.getElementById("entries");
     if (!list) return;
 
     list.innerHTML = "";
-
     entries.forEach((entry, index) => {
         const li = document.createElement("li");
-        li.innerText = `${index + 1}. ${entry.address}`;
+        li.style.wordBreak = "break-all"; // Ensures long addresses don't break layout
+        li.innerHTML = `<strong>#${index + 1}</strong>: ${entry.address}`;
         list.appendChild(li);
     });
 }
 
+// ===============================
+// 🎟️ CORE LOGIC
+// ===============================
 
-// ===============================
-// 🎟 BUY TICKET
-// ===============================
 function buyTicket() {
-
     if (typeof MINIMASK === "undefined") {
-        alert("❌ MiniMask not loaded yet!");
+        alert("MiniMask not detected! Please install the extension.");
         return;
     }
 
+    // Ensure we have a user address before proceeding
     if (!userAddress) {
-        alert("⚠️ MiniMask not ready or not logged in!");
+        alert("Please log in to MiniMask first.");
         return;
     }
 
-    console.log("🚀 Sending transaction...");
+    console.log("🚀 Initiating transaction...");
 
+    // Using the official send method
     MINIMASK.account.send(
-        String(TICKET_PRICE),
+        TICKET_PRICE,
         LOTTERY_ADDRESS,
-        "0x00",
-        {},
+        "0x00", // Payload/Data
+        {},     // Options
         function(resp) {
+            console.log("Transaction Callback:", resp);
 
-            console.log("MiniMask Response:", resp);
-
-            if (!resp.pending && !resp.status) {
+            if (resp.error) {
                 alert("❌ Error: " + resp.error);
                 return;
             }
 
             if (resp.pending) {
-                alert("⏳ Transaction created! Open MiniMask → approve it.");
+                console.log("⏳ Transaction is pending approval...");
+                // Note: The UI updates happen inside handlePending() via the init listener
             }
         }
     );
 }
 
-
-// ===============================
-// ✅ HANDLE CONFIRMATION
-// ===============================
 function handlePending(data) {
+    console.log("Processing Pending Result:", data);
 
-    console.log("Pending Result:", data);
-
+    // If response exists and status is true, the user approved and tx is sent
     if (data.response && data.response.status) {
+        
+        const newEntry = {
+            address: userAddress || "Unknown User",
+            time: new Date().toLocaleString(),
+            txHash: data.response.txHash || ""
+        };
 
-        entries.push({
-            address: userAddress,
-            time: new Date().toISOString()
-        });
-
+        entries.push(newEntry);
         localStorage.setItem("entries", JSON.stringify(entries));
+        
         renderEntries();
-
-        alert("🎟 Ticket confirmed!");
-
+        alert("🎟️ Ticket purchased successfully!");
     } else {
-        alert("❌ Transaction rejected or failed");
+        alert("❌ Transaction was rejected or failed to process.");
     }
 }
 
+// ===============================
+// 🎲 LOTTERY MANAGEMENT
+// ===============================
 
-// ===============================
-// 🎲 DRAW WINNER
-// ===============================
 function drawWinner() {
-
     if (entries.length === 0) {
-        alert("No entries yet!");
+        alert("No entries found!");
         return;
     }
 
-    const rand = crypto.getRandomValues(new Uint32Array(1))[0];
-    const index = rand % entries.length;
+    // Cryptographically secure random selection
+    const array = new Uint32Array(1);
+    window.crypto.getRandomValues(array);
+    const index = array[0] % entries.length;
 
     const winner = entries[index];
-
-    document.getElementById("winner").innerText =
-        `🏆 Winner: ${winner.address}`;
+    const winnerDisplay = document.getElementById("winner");
+    
+    if (winnerDisplay) {
+        winnerDisplay.innerText = `🏆 Winner: ${winner.address}`;
+    }
+    
+    console.log("Winner Drawn:", winner);
 }
 
-
-// ===============================
-// 🧹 RESET LOTTERY
-// ===============================
 function resetLottery() {
-    entries = [];
-    localStorage.removeItem("entries");
-    renderEntries();
-    document.getElementById("winner").innerText = "";
+    if (confirm("Are you sure you want to clear all entries?")) {
+        entries = [];
+        localStorage.removeItem("entries");
+        renderEntries();
+        
+        const winnerDisplay = document.getElementById("winner");
+        if (winnerDisplay) winnerDisplay.innerText = "";
+    }
 }
 
-
 // ===============================
-// 🚀 INIT UI
+// 🚀 START
 // ===============================
-renderEntries();
+document.addEventListener("DOMContentLoaded", () => {
+    renderEntries();
+});
