@@ -68,40 +68,45 @@ function renderEntries() {
 // ===============================
 async function buyTicket() {
 
-    try {
-        console.log("🚀 Sending request to MiniMask...");
-
-        const response = await sendToMiniMask("send", {
-            address: LOTTERY_ADDRESS,
-            amount: TICKET_PRICE
-        });
-
-        console.log("✅ MiniMask response:", response);
-
-        // 🚨 CRITICAL CHECK
-        if (!response || response === null) {
-            alert("MiniMask did not confirm transaction");
-            return;
-        }
-
-        // TEMP user (next step we replace this with real address)
-        const user = "User_" + Math.floor(Math.random() * 9999);
-
-        entries.push({
-            address: user,
-            time: new Date().toISOString()
-        });
-
-        localStorage.setItem("entries", JSON.stringify(entries));
-        renderEntries();
-
-        alert("🎟 Ticket purchased successfully!");
-
-    } catch (err) {
-        console.error("❌ Error:", err);
-        alert("MiniMask not responding or transaction failed");
+    if (typeof MINIMASK === "undefined") {
+        alert("MiniMask not loaded!");
+        return;
     }
+
+    console.log("🚀 Sending transaction via MiniMask...");
+
+    MINIMASK.account.send(
+        1,                          // amount
+        "MxLOTTERY123",             // address
+        "0x00",                     // token id (default MINIMA)
+        {},                         // state
+        function(resp) {
+
+            console.log("MiniMask Response:", resp);
+
+            if (!resp || resp.status === false) {
+                alert("Transaction failed: " + (resp.error || "Unknown error"));
+                return;
+            }
+
+            // TEMP entry (next step = real tracking)
+            const user = "User_" + Math.floor(Math.random() * 9999);
+
+            entries.push({
+                address: user,
+                time: new Date().toISOString()
+            });
+
+            localStorage.setItem("entries", JSON.stringify(entries));
+            renderEntries();
+
+            alert("🎟 Ticket purchased!");
+        }
+    );
 }
+
+    
+    
 
 // ===============================
 // 🎲 DRAW WINNER
