@@ -1,3 +1,25 @@
+let userAddress = "";
+
+MINIMASK.init(function(event) {
+
+    console.log("MiniMask Event:", event);
+
+    // 🟢 Wallet ready
+    if (event.event === "MINIMASK_INIT") {
+
+        if (event.data.loggedon) {
+            userAddress = event.data.address;
+            console.log("User Address:", userAddress);
+        } else {
+            console.log("Not logged in MiniMask");
+        }
+    }
+
+    // 🟢 Transaction result
+    if (event.event === "MINIMASK_PENDING") {
+        handlePending(event.data);
+    }
+});
 // ===============================
 // 🔌 MiniMask Wrapper (REAL BRIDGE)
 // ===============================
