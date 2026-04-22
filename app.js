@@ -1,10 +1,14 @@
-// Lottery address
+// ===============================
+// ⚙ CONFIG
+// ===============================
 const LOTTERY_ADDRESS = "0xFFEEDDFFEEDD99";
 
-// Store entries
 let entries = [];
 
-// Init MiniMask
+
+// ===============================
+// 🔌 INIT MINIMASK
+// ===============================
 window.onload = function () {
 
     if (typeof MINIMASK !== "undefined") {
@@ -16,7 +20,7 @@ window.onload = function () {
             if (msg.event === "MINIMASK_INIT") {
 
                 if (!msg.data.data.loggedon) {
-                    alert("⚠️ Please login to MiniMask first");
+                    alert("⚠️ Please login to MiniMask");
                     return;
                 }
 
@@ -38,14 +42,16 @@ window.onload = function () {
 
 
 
+// ===============================
 // 🎟 BUY TICKET
+// ===============================
 function buyTicket() {
 
     const state = {};
-    state[1] = "lottery_ticket_" + Date.now();
+    state[1] = "ticket_" + Date.now();
 
     MINIMASK.account.send(
-        "1",                 // ✅ FIXED (1 MINIMA)
+        "1", // ✅ 1 MINIMA
         LOTTERY_ADDRESS,
         "0x00",
         state,
@@ -54,7 +60,7 @@ function buyTicket() {
             console.log("Response:", resp);
 
             if (resp.pending) {
-                alert("🎟 Ticket created! Approve in MiniMask");
+                alert("🎟 Ticket sent! Approve in MiniMask");
             } else {
                 alert("❌ Error: " + resp.error);
             }
@@ -64,7 +70,9 @@ function buyTicket() {
 
 
 
-// 📥 LOAD ENTRIES (same as Wall)
+// ===============================
+// 📥 LOAD ENTRIES FROM BLOCKCHAIN
+// ===============================
 function loadEntries() {
 
     MINIMASK.meg.listcoins(LOTTERY_ADDRESS, "", "", function (resp) {
@@ -95,11 +103,13 @@ function loadEntries() {
 
 
 
+// ===============================
 // 🎯 DRAW WINNER
+// ===============================
 function drawWinner() {
 
     if (entries.length === 0) {
-        alert("No entries yet");
+        alert("No entries yet!");
         return;
     }
 
