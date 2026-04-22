@@ -1,209 +1,110 @@
-// ===============================
-// ⚙ CONFIG
-// ===============================
-const LOTTERY_ADDRESS = "MxG086HDR94WWW3ZJE24E807D5SQ7F5WUDQFNN9N221P89D698ZET9YK8832YJQ";
-const TICKET_PRICE = 1;
+// Lottery address
+const LOTTERY_ADDRESS = "0xFFEEDDFFEEDD99";
 
+// Store entries
+let entries = [];
 
-// ===============================
-// 📦 STATE
-// ===============================
-let userAddress = "";
-let entries = JSON.parse(localStorage.getItem("entries")) || [];
+// Init MiniMask
+window.onload = function () {
 
+    if (typeof MINIMASK !== "undefined") {
 
-// ===============================
-// 📱 DEVICE DETECTION
-// ===============================
-function isMobile() {
-    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-}
+        MINIMASK.init(function (msg) {
 
+            console.log("MiniMask:", msg);
 
-// ===============================
-// 🔌 INIT MINIMASK (SAFE)
-// ===============================
-window.addEventListener("load", () => {
+            if (msg.event === "MINIMASK_INIT") {
 
-    setTimeout(() => {
+                if (!msg.data.data.loggedon) {
+                    alert("⚠️ Please login to MiniMask first");
+                    return;
+                }
 
-        if (typeof MINIMASK === "undefined") {
-            console.warn("⚠️ MiniMask not detected (mobile or not installed)");
-            return;
-        }
+                console.log("✅ MiniMask connected");
 
-        console.log("✅ MiniMask detected");
-
-        MINIMASK.init(function(event) {
-
-            console.log("MiniMask Event:", event);
-
-            // 🟢 Get wallet address properly
-            if (event.event === "MINIMASK_INIT") {
-
-                MINIMASK.account.getAddress(function(resp) {
-
-                    console.log("Address response:", resp);
-
-                    if (resp && resp.data) {
-                        userAddress = resp.data;
-                        console.log("👤 Logged in:", userAddress);
-                    } else {
-                        console.warn("⚠️ Could not get address");
-                    }
-                });
+                loadEntries();
             }
 
-            // 🟢 Handle confirmed tx
-            if (event.event === "MINIMASK_PENDING") {
-                handlePending(event.data);
+            if (msg.event === "MINIMASK_PENDING") {
+                console.log("⏳ Pending:", msg.data);
             }
+
         });
 
-    }, 1000);
-
-});
-
-
-// ===============================
-// 🖥 RENDER ENTRIES
-// ===============================
-function renderEntries() {
-    const list = document.getElementById("entries");
-    if (!list) return;
-
-    list.innerHTML = "";
-
-    entries.forEach((entry, index) => {
-        const li = document.createElement("li");
-        li.innerText = `${index + 1}. ${entry.address}`;
-        list.appendChild(li);
-    });
-}
+    } else {
+        alert("❌ MiniMask not found");
+    }
+};
 
 
-// ===============================
+
 // 🎟 BUY TICKET
-// ===============================
 function buyTicket() {
 
-    const address = LOTTERY_ADDRESS;
-    const amount = TICKET_PRICE;
-
-    // ===============================
-    // 📱 MOBILE FLOW (NO MINIMASK)
-    // ===============================
-    if (isMobile()) {
-
-        const url = `minima://send?address=${address}&amount=${amount}`;
-
-        window.location.href = url;
-
-        alert("📲 Opening Minima Wallet... Confirm payment there.");
-
-        // simple fallback confirmation
-        setTimeout(() => {
-            addEntry("MobileUser");
-        }, 5000);
-
-        return;
-    }
-
-    // ===============================
-    // 💻 DESKTOP FLOW (MINIMASK)
-    // ===============================
-    if (typeof MINIMASK === "undefined") {
-        alert("❌ MiniMask not installed!");
-        return;
-    }
-
-    console.log("🚀 Sending transaction...");
+    const state = {};
+    state[1] = "lottery_ticket_" + Date.now();
 
     MINIMASK.account.send(
-        String(amount),
-        address,
+        "1",                 // ✅ FIXED (1 MINIMA)
+        LOTTERY_ADDRESS,
         "0x00",
-        {},
-        function(resp) {
+        state,
+        function (resp) {
 
-            console.log("MiniMask Response:", resp);
-
-            if (!resp.pending && !resp.status) {
-                alert("❌ Error: " + resp.error);
-                return;
-            }
+            console.log("Response:", resp);
 
             if (resp.pending) {
-                alert("⏳ Transaction created! Open MiniMask → approve.");
+                alert("🎟 Ticket created! Approve in MiniMask");
+            } else {
+                alert("❌ Error: " + resp.error);
             }
         }
     );
 }
 
 
-// ===============================
-// ✅ HANDLE CONFIRMATION
-// ===============================
-function handlePending(data) {
 
-    console.log("Pending Result:", data);
+// 📥 LOAD ENTRIES (same as Wall)
+function loadEntries() {
 
-    if (data.response && data.response.status) {
-        addEntry(userAddress || "Unknown");
-        alert("🎟 Ticket confirmed!");
-    } else {
-        alert("❌ Transaction rejected");
-    }
-}
+    MINIMASK.meg.listcoins(LOTTERY_ADDRESS, "", "", function (resp) {
 
+        console.log("Entries:", resp);
 
-// ===============================
-// ➕ ADD ENTRY
-// ===============================
-function addEntry(address) {
+        entries = [];
 
-    entries.push({
-        address: address,
-        time: new Date().toISOString()
+        let listHTML = "";
+
+        for (let i = 0; i < resp.data.length; i++) {
+
+            const coin = resp.data[i];
+
+            if (coin.state && coin.state[1]) {
+
+                const entry = coin.state[1];
+
+                entries.push(entry);
+
+                listHTML += "<li>" + entry + "</li>";
+            }
+        }
+
+        document.getElementById("entries").innerHTML = listHTML;
     });
-
-    localStorage.setItem("entries", JSON.stringify(entries));
-    renderEntries();
 }
 
 
-// ===============================
-// 🎲 DRAW WINNER
-// ===============================
+
+// 🎯 DRAW WINNER
 function drawWinner() {
 
     if (entries.length === 0) {
-        alert("No entries yet!");
+        alert("No entries yet");
         return;
     }
 
-    const rand = crypto.getRandomValues(new Uint32Array(1))[0];
-    const index = rand % entries.length;
-
-    const winner = entries[index];
+    const winner = entries[Math.floor(Math.random() * entries.length)];
 
     document.getElementById("winner").innerText =
-        `🏆 Winner: ${winner.address}`;
+        "🏆 Winner: " + winner;
 }
-
-
-// ===============================
-// 🧹 RESET
-// ===============================
-function resetLottery() {
-    entries = [];
-    localStorage.removeItem("entries");
-    renderEntries();
-    document.getElementById("winner").innerText = "";
-}
-
-
-// ===============================
-// 🚀 INIT UI
-// ===============================
-renderEntries();
