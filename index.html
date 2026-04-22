@@ -23,6 +23,30 @@
   <ul id="entries"></ul>
 </div>
 
+<!-- 🔍 Debug section (IMPORTANT) -->
+<div class="card">
+  <h3>Debug</h3>
+  <p id="status">Status: Not connected</p>
+</div>
+
 <script src="app.js"></script>
+
+<script>
+// ===============================
+// 🔌 Check MiniMask Injection
+// ===============================
+setTimeout(() => {
+  try {
+    document.getElementById("status").innerText =
+      "Status: Page Loaded (MiniMask may be active)";
+      
+    console.log("Page loaded. Ready to send requests.");
+
+  } catch (e) {
+    console.error(e);
+  }
+}, 500);
+</script>
+
 </body>
 </html>
