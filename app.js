@@ -66,41 +66,37 @@ function renderEntries() {
 // ===============================
 // 🎟 BUY TICKET (FIXED)
 // ===============================
-async function buyTicket() {
+function buyTicket() {
 
     if (typeof MINIMASK === "undefined") {
         alert("MiniMask not loaded!");
         return;
     }
 
-    console.log("🚀 Sending transaction via MiniMask...");
+    console.log("🚀 Sending transaction...");
 
     MINIMASK.account.send(
-        1,                          // amount
-        "MxLOTTERY123",             // address
-        "0x00",                     // token id (default MINIMA)
-        {},                         // state
+        1,                    // amount
+        "MxLOTTERY123",       // your lottery address
+        "0x00",               // MINIMA token
+        {},                   // state
         function(resp) {
 
             console.log("MiniMask Response:", resp);
 
-            if (!resp || resp.status === false) {
-                alert("Transaction failed: " + (resp.error || "Unknown error"));
+            // ✅ Correct handling
+            if (resp.pending) {
+                alert("⏳ Transaction pending! Open MiniMask and approve it.");
                 return;
             }
 
-            // TEMP entry (next step = real tracking)
-            const user = "User_" + Math.floor(Math.random() * 9999);
+            // ❌ Actual failure
+            if (!resp.status) {
+                alert("❌ Error: " + resp.error);
+                return;
+            }
 
-            entries.push({
-                address: user,
-                time: new Date().toISOString()
-            });
-
-            localStorage.setItem("entries", JSON.stringify(entries));
-            renderEntries();
-
-            alert("🎟 Ticket purchased!");
+            // ⚠️ No entry here — next step handles it
         }
     );
 }
