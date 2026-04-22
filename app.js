@@ -1,12 +1,14 @@
+// ===============================
+// 🔌 INIT MINIMASK
+// ===============================
 let userAddress = "";
 
-MINIMASK.init(function(event) {
+MINIMASK.init(function (event) {
 
     console.log("MiniMask Event:", event);
 
     // 🟢 Wallet ready
     if (event.event === "MINIMASK_INIT") {
-
         if (event.data.loggedon) {
             userAddress = event.data.address;
             console.log("User Address:", userAddress);
@@ -20,49 +22,12 @@ MINIMASK.init(function(event) {
         handlePending(event.data);
     }
 });
-// ===============================
-// 🔌 MiniMask Wrapper (REAL BRIDGE)
-// ===============================
-function sendToMiniMask(action, data = {}) {
-    return new Promise((resolve, reject) => {
-
-        const randid = Math.random().toString(36).substring(7);
-
-        function handler(event) {
-            const msg = event.data;
-
-            if (
-                msg &&
-                msg.minitype === "MINIMASK_RESPONSE" &&
-                msg.randid === randid
-            ) {
-                window.removeEventListener("message", handler);
-                resolve(msg.data);
-            }
-        }
-
-        // safety timeout (important)
-        setTimeout(() => {
-            window.removeEventListener("message", handler);
-            reject("MiniMask timeout");
-        }, 5000);
-
-        window.addEventListener("message", handler);
-
-        window.postMessage({
-            minitype: "MINIMASK_REQUEST",
-            action: action,
-            data: data,
-            randid: randid
-        });
-    });
-}
 
 // ===============================
 // ⚙ CONFIG
 // ===============================
-const LOTTERY_ADDRESS = "MxG086HDR94WWW3ZJE24E807D5SQ7F5WUDQFNN9N221P89D698ZET9YK8832YJQ"; // 🔁 replace with real address
-const TICKET_PRICE = 1;
+const LOTTERY_ADDRESS = "MxG086HDR94WWW3ZJE24E807D5SQ7F5WUDQFNN9N221P89D698ZET9YK8832YJQ";
+const TICKET_PRICE = "1";
 
 // ===============================
 // 📦 STATE
@@ -86,7 +51,7 @@ function renderEntries() {
 }
 
 // ===============================
-// 🎟 BUY TICKET (FIXED)
+// 🎟 BUY TICKET
 // ===============================
 function buyTicket() {
 
@@ -95,41 +60,50 @@ function buyTicket() {
         return;
     }
 
-    console.log("⏳ Waiting for MiniMask...");
+    if (!userAddress) {
+        alert("Please login to MiniMask!");
+        return;
+    }
 
-    // 🔥 IMPORTANT DELAY
+    console.log("⏳ Preparing transaction...");
+
+    // Small delay for mobile stability
     setTimeout(() => {
 
         console.log("🚀 Sending transaction...");
 
         MINIMASK.account.send(
-    "1",
-    LOTTERY_ADDRESS,   // ⚠️ MUST be real
+            TICKET_PRICE,
+            LOTTERY_ADDRESS,
             "0x00",
             {},
-            function(resp) {
+            function (resp) {
 
                 console.log("MiniMask Response:", resp);
 
+                // ❌ real error
                 if (!resp.pending && !resp.status) {
                     alert("❌ Error: " + resp.error);
                     return;
                 }
 
+                // ⏳ pending (correct state)
                 if (resp.pending) {
-                    alert("⏳ Transaction created! Check MiniMask.");
+                    alert("⏳ Transaction created! Open MiniMask → approve it.");
                 }
             }
         );
 
-    }, 1500); // 1.5 sec delay
+    }, 1200);
 }
 
+// ===============================
+// ✅ HANDLE CONFIRMATION
+// ===============================
 function handlePending(data) {
 
     console.log("Pending Result:", data);
 
-    // ✅ SUCCESS (user approved transaction)
     if (data.response && data.response.status) {
 
         entries.push({
@@ -145,8 +119,7 @@ function handlePending(data) {
     } else {
         alert("❌ Transaction rejected or failed");
     }
-}    
-    
+}
 
 // ===============================
 // 🎲 DRAW WINNER
