@@ -61,7 +61,7 @@ function sendToMiniMask(action, data = {}) {
 // ===============================
 // ⚙ CONFIG
 // ===============================
-const LOTTERY_ADDRESS = "MxLOTTERY123"; // 🔁 replace with real address
+const LOTTERY_ADDRESS = "MxG086HDR94WWW3ZJE24E807D5SQ7F5WUDQFNN9N221P89D698ZET9YK8832YJQ"; // 🔁 replace with real address
 const TICKET_PRICE = 1;
 
 // ===============================
