@@ -1,3 +1,31 @@
+function sendToMiniMask(action, data = {}) {
+    return new Promise((resolve) => {
+
+        const randid = Math.random().toString(36).substring(7);
+
+        function handler(event) {
+            const msg = event.data;
+
+            if (
+                msg &&
+                msg.minitype === "MINIMASK_RESPONSE" &&
+                msg.randid === randid
+            ) {
+                window.removeEventListener("message", handler);
+                resolve(msg.data);
+            }
+        }
+
+        window.addEventListener("message", handler);
+
+        window.postMessage({
+            minitype: "MINIMASK_REQUEST",
+            action: action,
+            data: data,
+            randid: randid
+        });
+    });
+}
 const LOTTERY_ADDRESS = "MxLOTTERY123"; // replace later
 let entries = JSON.parse(localStorage.getItem("entries")) || [];
 
