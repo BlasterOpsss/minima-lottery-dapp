@@ -82,7 +82,30 @@ function buyTicket() {
         sendTransaction();
     }
 }
-        
+function sendTransaction() {
+
+    console.log("🚀 Sending transaction...");
+
+    MINIMASK.account.send(
+        TICKET_PRICE,
+        LOTTERY_ADDRESS,
+        "0x00",
+        {},
+        function(resp) {
+
+            console.log("MiniMask Response:", resp);
+
+            if (!resp.pending && !resp.status) {
+                alert("❌ Error: " + resp.error);
+                return;
+            }
+
+            if (resp.pending) {
+                alert("⏳ Transaction created! Open MiniMask → approve it.");
+            }
+        }
+    );
+}        
 
 // ===============================
 // ✅ HANDLE CONFIRMATION
