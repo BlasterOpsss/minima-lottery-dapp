@@ -5,7 +5,6 @@ let userAddress = "";
 
 window.addEventListener("load", () => {
 
-    // wait for extension injection
     setTimeout(() => {
 
         if (typeof MINIMASK === "undefined") {
@@ -15,28 +14,39 @@ window.addEventListener("load", () => {
 
         console.log("✅ MiniMask detected");
 
+        // 🔥 INIT
         MINIMASK.init(function(event) {
 
             console.log("MiniMask Event:", event);
 
-            // 🟢 Wallet info
             if (event.event === "MINIMASK_INIT") {
 
-                if (event.data.loggedon) {
-                    userAddress = event.data.address;
-                    console.log("👤 User Address:", userAddress);
-                } else {
-                    console.log("⚠️ Not logged in MiniMask");
-                }
+                // 🔴 IMPORTANT: manually request account
+                MINIMASK.account.send(
+                    "0",
+                    "", 
+                    "0x00",
+                    {},
+                    function(res) {
+
+                        console.log("Account check:", res);
+
+                        if (res && res.status !== false) {
+                            userAddress = res.address;
+                            console.log("✅ Logged in as:", userAddress);
+                        } else {
+                            console.log("❌ Not logged in");
+                        }
+                    }
+                );
             }
 
-            // 🟢 Transaction result
             if (event.event === "MINIMASK_PENDING") {
                 handlePending(event.data);
             }
         });
 
-    }, 1000); // wait 1s
+    }, 1000);
 
 });
 
